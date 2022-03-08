@@ -1,0 +1,10 @@
+{
+    "name": "benjamin/lcl-ledger-reader",
+    "authors": [
+        {
+            "name": "Benjamin Delespierre",
+            "email": "benjamin.delespierre@gmail.com"
+        }
+    ],
+    "require": {}
+}
