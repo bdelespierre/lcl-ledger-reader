@@ -42,6 +42,7 @@
                     <tr>
                         <td></td>
                         <th scope="col">Date</th>
+                        <th scope="col" class="text-end">Num</th>
                         <th scope="col">Type</th>
                         <th scope="col">Label</th>
                         <th scope="col" class="text-end">Credit</th>
@@ -49,15 +50,19 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <?php $prev = null ?>
                     <?php foreach (parse_lcl_table_content($_POST['table-content']) as $row): ?>
+                        <?php $num = $row['date'] == ($prev) ? $num + 1 : 1 ?>
                         <tr>
                             <td class="text-center"><input type="checkbox"/></td>
-                            <td><?=$row['date']?></td>
+                            <td><?php if ($row['date'] != $prev): ?><?=(new DateTime($row['date']))->format('d/m/y')?><?php endif ?></td>
+                            <td class="text-end"><?=$num?></td>
                             <td><?=$row['type']?></td>
                             <td><?=$row['label']?></td>
                             <td class="text-end font-monospace"><?php if ($row['credit']): ?><?=sprintf('%.02f', $row['credit'])?> €<?php endif ?></td>
                             <td class="text-end font-monospace"><?php if ($row['debit']): ?><?=sprintf('%.02f', $row['debit'])?> €<?php endif ?></td>
                         </tr>
+                        <?php $prev = $row['date'] ?>
                     <?php endforeach ?>
                 </tbody>
             </table>
