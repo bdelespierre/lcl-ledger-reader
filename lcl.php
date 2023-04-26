@@ -72,30 +72,17 @@ function get_credit_debit_from_amount(float $amount): array
 
 function fix_dates(array $ops): array
 {
-    // fix missing years
-    for ($i = 0; $i < count($ops); $i++) {
-        if (is_null($ops[$i]['year'])) {
-            // backward lookup <-<-<-[j]
-            for ($j = $i - 1; $j >= 0; $j--) {
-                if (
-                    isset($ops[$j]['year'])
-                    && $ops[$i]['month'] == $ops[$j]['month']
-                ) {
-                    $ops[$i]['year'] = $ops[$j]['year'];
-                    break;
-                }
-            }
-        }
-
-        if (is_null($ops[$i]['year'])) {
-            // forward lookup [j]->->->
-            for ($j = $i + 1; $j < count($ops); $j++) {
-                if (
-                    isset($ops[$j]['year'])
-                    && $ops[$i]['month'] == $ops[$j]['month']
-                ) {
-                    $ops[$i]['year'] = $ops[$j]['year'];
-                    break;
+    // fix missing years by proximity lookup, starting from the last operation
+    // in $ops (which is at the end) so the current year doesn't "bubble" from
+    // the newest operations.
+    for ($i = count($ops) - 1; $i >= 0; $i--) {
+        if (!isset($ops[$i]['year'])) {
+            for ($j = $i + 1, $k = $i - 1; isset($ops[$j]) || isset($ops[$k]); $j++, $k--) {
+                foreach ([$j, $k] as $o) {
+                    if (isset($ops[$o]['year']) && $ops[$i]['month'] == $ops[$o]['month']) {
+                        $ops[$i]['year'] = $ops[$o]['year'];
+                        break 2;
+                    }
                 }
             }
         }
