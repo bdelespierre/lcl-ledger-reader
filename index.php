@@ -4,8 +4,26 @@ require 'lcl.php';
 
 if (isset($_POST['action']) && $_POST['action'] == 'Parse') {
     $rows = parse_lcl_table_content($_POST['table-content']);
+
+    if (isset($_POST['balance']) && $_POST['balance'] != '') {
+        $balance = floatval($_POST['balance']);
+        for ($i = count($rows) - 1; $i >= 0; $i--) {
+            $rows[$i]['balance'] = $balance;
+            $balance += $rows[$i]['debit'] ?? 0;
+            $balance -= $rows[$i]['credit'] ?? 0;
+        }
+    }
 }
 
+function money_format(
+    float $num,
+    string $symbol = "€",
+    int $decimals = 2,
+    ?string $decimal_separator = ".",
+    ?string $thousands_separator = ",",
+): string {
+    return number_format($num, $decimals, $decimal_separator, $thousands_separator) . " " . $symbol;
+}
 
 ?>
 <!DOCTYPE html>
@@ -45,6 +63,10 @@ if (isset($_POST['action']) && $_POST['action'] == 'Parse') {
                     <label for="table-content-textarea">Copy/paste content here</label>
                     <textarea id="table-content-textarea" class="w-100" name="table-content" rows="15"></textarea>
                 </div>
+                <div class="mb-3">
+                    <label for="balance-input">Current balance</label>
+                    <input id="balance-input" type="number" class="w-100" step="0.01" name="balance" />
+                </div>
                 <input class="btn btn-primary" type="submit" name="action" value="Parse">
             </form>
         <?php else : ?>
@@ -57,6 +79,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'Parse') {
                         <th scope="col">Label</th>
                         <th scope="col" class="text-end">Credit</th>
                         <th scope="col" class="text-end">Debit</th>
+                        <?php if (!empty($_POST['balance'])) : ?><th scope="col" class="text-end">Balance</td><?php endif ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,8 +91,9 @@ if (isset($_POST['action']) && $_POST['action'] == 'Parse') {
                             <td><?php if ($row['date'] != $prev) : ?><?= (new DateTime($row['date']))->format('Y-m-d') ?><?php endif ?></td>
                             <td class="text-end"><?= $num ?></td>
                             <td><?= $row['label'] ?></td>
-                            <td class="text-end font-monospace"><?php if ($row['credit']) : ?><?= sprintf('%.02f', $row['credit']) ?> €<?php endif ?></td>
-                            <td class="text-end font-monospace"><?php if ($row['debit']) : ?><?= sprintf('%.02f', $row['debit']) ?> €<?php endif ?></td>
+                            <td class="text-end font-monospace"><?php if ($row['credit']) : ?><?= money_format($row['credit']) ?><?php endif ?></td>
+                            <td class="text-end font-monospace"><?php if ($row['debit']) : ?><?= money_format($row['debit']) ?><?php endif ?></td>
+                            <?php if (!empty($_POST['balance'])) : ?><td class="text-end font-monospace <?php if ($row['balance'] < 0) : ?>text-danger<?php endif ?>"><?= money_format($row['balance']) ?></td><?php endif ?>
                         </tr>
                         <?php $prev = $row['date'] ?>
                     <?php endforeach ?>

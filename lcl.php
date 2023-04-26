@@ -42,7 +42,7 @@ function parse_lcl_table_content(string $content): array
 
 function get_date_from_label(string $label): ?array
 {
-    if (preg_match('/(\d\d)\/(\d\d)\/(\d\d)$/', $label, $matches)) {
+    if (preg_match('/(\d{2})\/(\d{2})\/(\d{2})$/', $label, $matches)) {
         list(, $day, $month, $year) = $matches;
         return [$day, $month, "20{$year}"];
     }
