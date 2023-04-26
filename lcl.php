@@ -13,37 +13,6 @@ define("LCL_MONTHS", [
 /**
  * @return array<array{date:string,label:string,credit:?float,debit:?float}>
  */
-function parse_csv_file($file): array
-{
-    if ($file === false) {
-        return [];
-    }
-
-    $padding = array_fill(0, 5, null);
-    while (($data = fgetcsv($file, 1024, ";")) !== false) {
-        list($date_fr, $amount,,, $label) = $data + $padding;
-
-        if (!$label) {
-            continue;
-        }
-
-        list($day, $month, $year) = (get_date_from_label($label)
-            ?? explode('/', $date_fr)
-        );
-
-        list($credit, $debit) = get_credit_debit_from_amount(floatval(
-            str_replace([',', ' '], ['.', ''], $amount)
-        ));
-
-        $ops[] = compact('day', 'month', 'year', 'label', 'credit', 'debit');
-    }
-
-    return sort_by_dates(format_dates(fix_dates($ops)));
-}
-
-/**
- * @return array<array{date:string,label:string,credit:?float,debit:?float}>
- */
 function parse_lcl_table_content(string $content): array
 {
     $results = preg_match_all(LCL_LINE_REGEX, $content, $matches);

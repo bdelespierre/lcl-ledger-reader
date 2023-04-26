@@ -6,9 +6,6 @@ if (isset($_POST['action']) && $_POST['action'] == 'Parse') {
     $rows = parse_lcl_table_content($_POST['table-content']);
 }
 
-if (isset($_POST['action']) && $_POST['action'] == 'Upload') {
-    $rows = parse_csv_file(fopen($_FILES['csv-file']['tmp_name'], 'r'));
-}
 
 ?>
 <!DOCTYPE html>
@@ -44,11 +41,6 @@ if (isset($_POST['action']) && $_POST['action'] == 'Upload') {
 
         <?php if (empty($_POST['action'])) : ?>
             <form class="form" action="index.php" method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="csv-file">Upload CSV file</label>
-                    <input id="csv-file" class="form-control" type="file" name="csv-file">
-                </div>
-                <input class="btn btn-primary" type="submit" name="action" value="Upload">
                 <div class="mb-3">
                     <label for="table-content-textarea">Copy/paste content here</label>
                     <textarea id="table-content-textarea" class="w-100" name="table-content" rows="15"></textarea>
