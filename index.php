@@ -4,15 +4,6 @@ require 'lcl.php';
 
 if (isset($_POST['action']) && $_POST['action'] == 'Parse') {
     $rows = parse_lcl_table_content($_POST['table-content']);
-
-    if (isset($_POST['balance']) && $_POST['balance'] != '') {
-        $balance = floatval($_POST['balance']);
-        for ($i = count($rows) - 1; $i >= 0; $i--) {
-            $rows[$i]['balance'] = $balance;
-            $balance += $rows[$i]['debit'] ?? 0;
-            $balance -= $rows[$i]['credit'] ?? 0;
-        }
-    }
 }
 
 function money_format(
@@ -63,10 +54,6 @@ function money_format(
                     <label for="table-content-textarea">Copy/paste content here</label>
                     <textarea id="table-content-textarea" class="w-100" name="table-content" rows="15"></textarea>
                 </div>
-                <div class="mb-3">
-                    <label for="balance-input">Current balance</label>
-                    <input id="balance-input" type="number" class="w-100" step="0.01" name="balance" />
-                </div>
                 <input class="btn btn-primary" type="submit" name="action" value="Parse">
             </form>
         <?php else : ?>
@@ -79,7 +66,7 @@ function money_format(
                         <th scope="col">Label</th>
                         <th scope="col" class="text-end">Credit</th>
                         <th scope="col" class="text-end">Debit</th>
-                        <?php if (!empty($_POST['balance'])) : ?><th scope="col" class="text-end">Balance</td><?php endif ?>
+                        <th scope="col" class="text-end">Balance</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -93,7 +80,7 @@ function money_format(
                             <td><?= $row['label'] ?></td>
                             <td class="text-end font-monospace"><?php if ($row['credit']) : ?><?= money_format($row['credit']) ?><?php endif ?></td>
                             <td class="text-end font-monospace"><?php if ($row['debit']) : ?><?= money_format($row['debit']) ?><?php endif ?></td>
-                            <?php if (!empty($_POST['balance'])) : ?><td class="text-end font-monospace <?php if ($row['balance'] < 0) : ?>text-danger<?php endif ?>"><?= money_format($row['balance']) ?></td><?php endif ?>
+                            <td class="text-end font-monospace <?php if ($row['balance'] < 0) : ?>text-danger<?php endif ?>"><?php if (!is_null($row['balance'])) : ?><?= money_format($row['balance']) ?><?php endif ?></td>
                         </tr>
                         <?php $prev = $row['date'] ?>
                     <?php endforeach ?>

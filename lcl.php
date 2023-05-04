@@ -3,6 +3,8 @@
 // try it on https://regex101.com/
 define('LCL_LINE_REGEX', "/(?<day>\d{2})\r?\n(?<month>[\wÉÛ]+\.?)\r?\n(?<label>[^\r\n]+)\r?\n(En cours de traitement\*\r?\n)?(?<amount>-?[\d ,]+) €(\r?\nCliquer pourPlus de détails\r?\n)?/m");
 
+define('LCL_BALANCE_REGEX', "/Autres comptes\r?\n(?<amount>-?[\d ,]+) €\r?\nCompte N°/m");
+
 define("LCL_MONTHS", [
     'JANV.' =>  1, 'FÉVR.' =>  2, 'MARS'  =>  3,
     'AVR.'  =>  4, 'MAI'   =>  5, 'JUIN'  =>  6,
@@ -11,7 +13,7 @@ define("LCL_MONTHS", [
 ]);
 
 /**
- * @return array<array{date:string,label:string,credit:?float,debit:?float}>
+ * @return array<array{date:string,label:string,credit:?float,debit:?float,balance:?float}>
  */
 function parse_lcl_table_content(string $content): array
 {
@@ -30,14 +32,26 @@ function parse_lcl_table_content(string $content): array
             ?? [$matches['day'][$i], LCL_MONTHS[$matches['month'][$i]], null]
         );
 
-        list($credit, $debit) = get_credit_debit_from_amount(floatval(
-            str_replace([',', ' '], ['.', ''], $matches['amount'][$i])
-        ));
+        list($credit, $debit, $balance) = get_credit_debit_from_amount(
+            amount_as_float($matches['amount'][$i])
+        );
 
-        $ops[] = compact('day', 'month', 'year', 'label', 'credit', 'debit');
+        $ops[] = compact('day', 'month', 'year', 'label', 'credit', 'debit', 'balance');
     }
 
-    return sort_by_dates(format_dates(fix_dates($ops)));
+    $ops = sort_by_dates(format_dates(fix_dates($ops)));
+
+    if (preg_match(LCL_BALANCE_REGEX, $content, $bmatches)) {
+        $balance = amount_as_float($bmatches['amount']);
+
+        for ($i = count($ops) - 1; $i >= 0; $i--) {
+            $ops[$i]['balance'] = $balance;
+            $balance += $ops[$i]['debit'] ?? 0;
+            $balance -= $ops[$i]['credit'] ?? 0;
+        }
+    }
+
+    return $ops;
 }
 
 function get_date_from_label(string $label): ?array
@@ -60,6 +74,14 @@ function get_date_from_label(string $label): ?array
     return null;
 }
 
+function amount_as_float(string $amount): float
+{
+    return floatval(str_replace([',', ' '], ['.', ''], $amount));
+}
+
+/**
+ * @return array{?float,?float,?float}
+ */
 function get_credit_debit_from_amount(float $amount): array
 {
     $credit = $debit = null;
@@ -67,7 +89,7 @@ function get_credit_debit_from_amount(float $amount): array
         $credit = $amount :
         $debit = abs($amount);
 
-    return [$credit, $debit];
+    return [$credit, $debit, null];
 }
 
 function fix_dates(array $ops): array
